@@ -3,6 +3,7 @@ package org.fekz115.innowisetesttask.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.fekz115.innowisetesttask.model.Document;
+import org.fekz115.innowisetesttask.service.UserService;
 import org.fekz115.innowisetesttask.service.document.DocumentCreationRequest;
 import org.fekz115.innowisetesttask.service.document.DocumentService;
 import org.springframework.http.HttpHeaders;
@@ -24,6 +25,7 @@ import java.util.Optional;
 public class DocumentController {
 
     private final DocumentService documentService;
+    private final UserService userService;
     private final ObjectMapper objectMapper;
 
     @GetMapping("all")
@@ -40,9 +42,14 @@ public class DocumentController {
     @ResponseStatus(HttpStatus.CREATED)
     Optional<Document> saveDocument(
             @RequestPart String document,
-            @RequestPart MultipartFile file
+            @RequestPart MultipartFile file,
+            Principal principal
     ) throws IOException {
-        return documentService.saveDocument(objectMapper.readValue(document, DocumentCreationRequest.class), file);
+        return documentService.saveDocument(
+                objectMapper.readValue(document, DocumentCreationRequest.class),
+                file,
+                userService.getUserByName(principal.getName()).orElseThrow()
+        );
     }
 
     @GetMapping("getFileName/{id}")

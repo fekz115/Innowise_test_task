@@ -35,10 +35,13 @@ public class DocumentService {
         return userRepository.findByLogin(login).orElseThrow().getDocuments();
     }
 
-    public Optional<Document> saveDocument(DocumentCreationRequest documentCreationRequest, MultipartFile file) throws IOException {
+    public Optional<Document> saveDocument(DocumentCreationRequest documentCreationRequest, MultipartFile file, User author) throws IOException {
         String uuid = UUID.randomUUID().toString();
         File dest = new File(uploadPath + "/" + uuid);
         file.transferTo(dest);
+        if(!documentCreationRequest.getUsersIds().contains(author.getId())) {
+            documentCreationRequest.getUsersIds().add(author.getId());
+        }
         return Optional.of(
                 documentRepository.save(
                         new Document(
