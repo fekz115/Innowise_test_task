@@ -12,9 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,38 +34,33 @@ public class DocumentService {
     }
 
     public Optional<Document> saveDocument(DocumentCreationRequest documentCreationRequest, MultipartFile file, User author) throws IOException {
-        String uuid = UUID.randomUUID().toString();
-        File dest = new File(uploadPath + "/" + uuid);
-        file.transferTo(dest);
-        if(!documentCreationRequest.getUsersIds().contains(author.getId())) {
-            documentCreationRequest.getUsersIds().add(author.getId());
-        }
+        addAuthor(documentCreationRequest.getUsersIds(), author);
         return Optional.of(
                 documentRepository.save(
                         new Document(
                                 0,
-                                documentCreationRequest
-                                        .getUsersIds()
-                                        .stream()
-                                        .map(x -> {
-                                            User user = new User();
-                                            user.setId(x);
-                                            return user;
-                                        })
-                                        .collect(Collectors.toSet()),
+                                toUsersList(documentCreationRequest.getUsersIds()),
                                 LocalDateTime.now(),
                                 documentCreationRequest.getStatus(),
                                 file.getName(),
-                                uuid
+                                saveFile(file).getName()
                         )
                 )
         );
     }
 
+    public Optional<Document> updateDocument(DocumentUpdateRequest documentUpdateRequest, MultipartFile file, User author) throws IOException {
+        Document document = documentRepository.getOne(documentUpdateRequest.getId());
+        document.setUsers(toUsersList(documentUpdateRequest.getUsersIds()));
+        document.setStatus(documentUpdateRequest.getStatus());
+        document.setName(file.getName());
+        document.setFileName(saveFile(file).getName());
+        return Optional.of(documentRepository.save(document));
+    }
+
     public Optional<String> getFileName(int id) {
         return documentRepository.findById(id).map(Document::getFileName);
     }
-
 
     public File loadFile(String filename) {
         return new File(uploadPath + filename);
@@ -75,5 +68,27 @@ public class DocumentService {
 
     public Optional<Document> getByName(String fileName) {
         return documentRepository.findByFileName(fileName);
+    }
+
+    private Set<User> toUsersList(List<Integer> userIds) {
+        return userIds.stream()
+                .map(x -> {
+                    User user = new User();
+                    user.setId(x);
+                    return user;
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private void addAuthor(List<Integer> usersIds, User author) {
+        if (!usersIds.contains(author.getId())) {
+            usersIds.add(author.getId());
+        }
+    }
+
+    private File saveFile(MultipartFile multipartFile) throws IOException {
+        File file = new File(uploadPath + "/" + UUID.randomUUID().toString());
+        multipartFile.transferTo(file);
+        return file;
     }
 }
