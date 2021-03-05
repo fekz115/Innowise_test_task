@@ -7,6 +7,7 @@ import org.fekz115.innowisetesttask.service.UserService;
 import org.fekz115.innowisetesttask.service.document.DocumentCreationRequest;
 import org.fekz115.innowisetesttask.service.document.DocumentFindRequest;
 import org.fekz115.innowisetesttask.service.document.DocumentService;
+import org.fekz115.innowisetesttask.service.document.DocumentUpdateRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -48,6 +49,20 @@ public class DocumentController {
     ) throws IOException {
         return documentService.saveDocument(
                 objectMapper.readValue(document, DocumentCreationRequest.class),
+                file,
+                userService.getUserByName(principal.getName()).orElseThrow()
+        );
+    }
+
+    @PutMapping(path = "save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    Optional<Document> updateDocument(
+            @RequestPart String document,
+            @RequestPart MultipartFile file,
+            Principal principal
+    ) throws IOException {
+        return documentService.updateDocument(
+                objectMapper.readValue(document, DocumentUpdateRequest.class),
                 file,
                 userService.getUserByName(principal.getName()).orElseThrow()
         );

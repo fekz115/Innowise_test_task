@@ -28,7 +28,7 @@ public class DocumentService {
 
     public Collection<Document> getAll(DocumentFindRequest documentFindRequest) {
         return filter(
-                documentFindRequest.getPage() == null 
+                documentFindRequest.getPage() == null
                         ? documentRepository.findAll()
                         : documentRepository.findAll(documentFindRequest.getPage()),
                 documentFindRequest
