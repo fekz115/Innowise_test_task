@@ -37,8 +37,11 @@ public class UserService implements UserDetailsService {
     }
 
     public String getToken(String login, String password) throws BadCredentialsException {
-        User user = repository.findByLoginAndPassword(login, password).orElseThrow(() -> new BadCredentialsException("Incorrect login or password"));
-        return jwtTokenUtil.generateToken(user);
+        return jwtTokenUtil.generateToken(
+            repository
+                .findByLoginAndPassword(login, password)
+                .orElseThrow(() -> new BadCredentialsException("Incorrect login or password"))
+        );
     }
 
     public Optional<User> getUserByName(String login) {

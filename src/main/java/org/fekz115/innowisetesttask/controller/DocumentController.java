@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import org.fekz115.innowisetesttask.model.Document;
 import org.fekz115.innowisetesttask.service.UserService;
 import org.fekz115.innowisetesttask.service.document.DocumentCreationRequest;
+import org.fekz115.innowisetesttask.service.document.DocumentFindRequest;
 import org.fekz115.innowisetesttask.service.document.DocumentService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,13 +30,13 @@ public class DocumentController {
     private final ObjectMapper objectMapper;
 
     @GetMapping("all")
-    Collection<Document> getAll() {
-        return documentService.getAll();
+    Collection<Document> getAll(@RequestBody DocumentFindRequest documentFindRequest) {
+        return documentService.getAll(documentFindRequest);
     }
 
     @GetMapping("my")
-    Collection<Document> getMy(Principal principal) {
-        return documentService.getAllForUser(principal.getName());
+    Collection<Document> getMy(Principal principal, @RequestBody DocumentFindRequest documentFindRequest) {
+        return documentService.getAllForUser(principal.getName(), documentFindRequest);
     }
 
     @PostMapping(path = "save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -25,12 +26,35 @@ public class DocumentService {
     @Value("${documentservice.uploadpath}")
     private String uploadPath;
 
-    public Collection<Document> getAll() {
-        return documentRepository.findAll();
+    public Collection<Document> getAll(DocumentFindRequest documentFindRequest) {
+        return filter(
+                documentFindRequest.getPage() == null 
+                        ? documentRepository.findAll()
+                        : documentRepository.findAll(documentFindRequest.getPage()),
+                documentFindRequest
+        );
     }
 
-    public Collection<Document> getAllForUser(String login) {
-        return userRepository.findByLogin(login).orElseThrow().getDocuments();
+    public Collection<Document> getAllForUser(String login, DocumentFindRequest documentFindRequest) {
+        return filter(userRepository.findByLogin(login).orElseThrow().getDocuments(), documentFindRequest);
+    }
+
+    private Collection<Document> filter(Iterable<Document> documents, DocumentFindRequest documentFindRequest) {
+        return StreamSupport.stream(documents.spliterator(), false).filter(document -> {
+            if(documentFindRequest != null) {
+                if (documentFindRequest.getUsersIds() != null) {
+                    if (document.getUsers().stream().map(User::getId).noneMatch(x -> documentFindRequest.getUsersIds().contains(x)))
+                        return false;
+                }
+                if (documentFindRequest.getStatus() != null) {
+                    return document.getStatus().equals(documentFindRequest.getStatus());
+                }
+                if (documentFindRequest.getCreationDate() != null) {
+                    return document.getCreationDate().equals(documentFindRequest.getCreationDate());
+                }
+            }
+            return true;
+        }).collect(Collectors.toList());
     }
 
     public Optional<Document> saveDocument(DocumentCreationRequest documentCreationRequest, MultipartFile file, User author) throws IOException {
